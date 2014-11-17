@@ -1,18 +1,19 @@
 (ns rubberlike.core
-  (:import [java.nio.file Files FileVisitResult]))
+  (:import [java.nio.file Paths Files FileVisitResult]))
 
 (defn settings
-  [data-dir]
+  [{:keys [port data-path]}]
   (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
       (.put "http.enabled" "true")
-      (.put "path.data" data-dir)
+      (.put "path.data" (str data-path))
+      (cond-> port (.put "http.port" (str port)))
       (.build)))
 
 (defn create-node
-  [data-dir]
+  [config]
   (-> (org.elasticsearch.node.NodeBuilder/nodeBuilder)
       (.local true)
-      (.settings (settings data-dir))
+      (.settings (settings config))
       .node))
 
 (defn bound-address
@@ -63,17 +64,21 @@
 (defn delete-recursively [path]
   (Files/walkFileTree path delete-recursively-visitor))
 
-(defn create-temp-dir
-  [prefix]
-  (Files/createTempDirectory prefix (into-array java.nio.file.attribute.FileAttribute [])))
+(defn data-path
+  [{:keys [data-dir temp-data-dir?] :as config}]
+  (cond
+   data-dir (Paths/get data-dir (into-array String []))
+   temp-data-dir? (Files/createTempDirectory "rubberlike" (into-array java.nio.file.attribute.FileAttribute []))
+   :else (throw (ex-info "You must supply either data-dir or set temp-data-dir? to true" config))))
 
-(defn create-server
-  []
-  (let [data-path (create-temp-dir "elasticsearch-embedded-server")]
-    {:node (create-node (str data-path))
-     :data-path data-path}))
+(defn create
+  ([]
+     (create {:temp-data-dir? true}))
+  ([config]
+     (let [config (assoc config :data-path (data-path config))]
+       (assoc config :node (create-node config)))))
 
-(defn stop-server
+(defn stop
   [server]
   (-> server :node .stop)
   (-> server :data-path delete-recursively)
