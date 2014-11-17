@@ -10,7 +10,7 @@ Elasticsearch is not included as a dependency in Rubberlike so you would have to
 
 ## Usage
 
-All functions reside in the `rubbeerlike.core` namespace.
+All functions reside in the `rubberlike.core` namespace.
 
 `create` creates and starts an embedded Elasticsearch server instance. Invoking `create` with no arguments will create a temporary directory for data storage, as well as bind the server instance to a dynamically allocated port.
 
