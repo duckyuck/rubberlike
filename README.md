@@ -17,7 +17,8 @@ All functions reside in the `rubberlike.core` namespace.
 Alternatively, `create` can be invoked with a map of configuration parameters. These are:
 *  `port` to define which port Elasticsearch will bind to.
 *  `data-dir` pointing to the directory where data is to be stored.
-*  `temp-data-dir?` which if set to true will tell Rubberlike to create a temporary data directory for you.
+*  `temp-data-dir?` which if set to `true` will tell Rubberlike to create a temporary data directory for you.
+*  `disable-http?` which will stop Rubberlike from launching a HTTP interface for your instance when set to `true`.
 
 The object returned from `create` is to be provided as the sole argument to the following functions.
 

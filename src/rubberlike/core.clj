@@ -2,9 +2,9 @@
   (:import [java.nio.file Paths Files FileVisitResult]))
 
 (defn settings
-  [{:keys [port data-path]}]
+  [{:keys [port data-path enable-http?]}]
   (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
-      (.put "http.enabled" "true")
+      (.put "http.enabled" (str (not disable-http?)))
       (.put "path.data" (str data-path))
       (cond-> port (.put "http.port" (str port)))
       (.build)))
@@ -71,11 +71,15 @@
    temp-data-dir? (Files/createTempDirectory "rubberlike" (into-array java.nio.file.attribute.FileAttribute []))
    :else (throw (ex-info "You must supply either data-dir or set temp-data-dir? to true" config))))
 
+(def default-config
+  {:disable-http? false
+   :temp-data-dir? true})
+
 (defn create
   ([]
-     (create {:temp-data-dir? true}))
+     (create {}))
   ([config]
-     (let [config (assoc config :data-path (data-path config))]
+     (let [config (assoc config :data-path (data-path (merge default-config config)))]
        (assoc config :node (create-node config)))))
 
 (defn stop
