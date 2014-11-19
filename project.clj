@@ -1,4 +1,4 @@
-(defproject rubberlike "0.1.2-SNAPSHOT"
+(defproject rubberlike "0.1.2"
   :description "A Clojure library for creating embedded Elasticsearch servers."
   :url "https://github.com/andersfurseth/rubberlike"
   :license {:name "Eclipse Public License"
