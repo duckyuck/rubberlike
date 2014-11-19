@@ -26,7 +26,7 @@ The object returned from `create` is to be provided as the sole argument to the 
 
 There is also a `client` function which will give you an instance of `org.elasticsearch.client.Client` for use with Elasticsearch's native API.
 
-The server can be stopped by calling `stop`. If `temp-data-dir?` in the call to `create` was set to `true`, the temporary directory will be deleted upon calling `stop`.
+The server can be stopped by calling `stop`. If `temp-data-dir?` in the call to `create` was set to `true`, the data directory will be deleted upon calling `stop`.
 
 Let's summarize this with an example:
 
