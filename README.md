@@ -24,6 +24,8 @@ The object returned from `create` is to be provided as the sole argument to the 
 
 `uri` will give you the server URI, which will come in handy if the port is being dynamically allocated. There is also `port` and `host` methods to obtain these parts individually.
 
+There is also a `client` function which will give you an instance of `org.elasticsearch.client.Client` for use with Elasticsearch's native API.
+
 The server can be stopped by calling `stop`. If `temp-data-dir?` in the call to `create` was set to `true`, the temporary directory will be deleted upon calling `stop`.
 
 Let's summarize this with an example:
