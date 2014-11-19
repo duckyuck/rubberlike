@@ -79,11 +79,14 @@
   ([]
      (create {}))
   ([config]
-     (let [config (assoc config :data-path (data-path (merge default-config config)))]
-       (assoc config :node (create-node config)))))
+     (let [config (merge default-config config)]
+       (merge config
+              {:node (create-node config)
+               :data-path (data-path config)}))))
 
 (defn stop
-  [server]
-  (-> server :node .stop)
-  (-> server :data-path delete-recursively)
+  [{:keys [node data-path temp-data-dir?]}]
+  (.stop node)
+  (when temp-data-dir?
+    (delete-recursively data-path))
   :stopped)
