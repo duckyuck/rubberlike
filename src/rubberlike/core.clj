@@ -68,7 +68,7 @@
   [{:keys [data-dir temp-data-dir?] :as config}]
   (cond
    data-dir (Paths/get data-dir (into-array String []))
-   temp-data-dir? (Files/createTempDirectory "rubberlike" (into-array java.nio.file.attribute.FileAttribute []))
+   temp-data-dir? (Files/createTempDirectory "rubberlike-" (into-array java.nio.file.attribute.FileAttribute []))
    :else (throw (ex-info "You must supply either data-dir or set temp-data-dir? to true" config))))
 
 (def default-config
@@ -79,10 +79,9 @@
   ([]
      (create {}))
   ([config]
-     (let [config (merge default-config config)]
-       (merge config
-              {:node (create-node config)
-               :data-path (data-path config)}))))
+     (let [config (merge default-config config)
+           config (assoc config :data-path (data-path config))]
+       (assoc config :node (create-node config)))))
 
 (defn stop
   [{:keys [node data-path temp-data-dir?]}]
