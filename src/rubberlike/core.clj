@@ -2,7 +2,7 @@
   (:import [java.nio.file Paths Files FileVisitResult]))
 
 (defn settings
-  [{:keys [port data-path enable-http?]}]
+  [{:keys [port data-path disable-http?]}]
   (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
       (.put "http.enabled" (str (not disable-http?)))
       (.put "path.data" (str data-path))
