@@ -6,44 +6,31 @@
   (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
       (.put "http.enabled" (str (not disable-http?)))
       (.put "path.data" (str data-path))
-      (cond-> port (.put "http.port" (str port)))
+      (cond-> host              (.put "http.host" (str port)))
+      (cond-> port              (.put "http.port" (str port)))
       (.build)))
+
+(defn health-response
+  [node]
+  (-> node
+      .client
+      .admin
+      .cluster
+      (.prepareHealth (into-array String []))
+      .setWaitForYellowStatus
+      (.setTimeout (org.elasticsearch.common.unit.TimeValue/timeValueSeconds 5))
+      .execute
+      .actionGet))
 
 (defn create-node
   [config]
-  (-> (org.elasticsearch.node.NodeBuilder/nodeBuilder)
-      (.local true)
-      (.settings (settings config))
-      .node))
-
-(defn bound-address
-  [server]
-  (-> server
-      :node
-      .injector
-      (.getInstance org.elasticsearch.http.HttpServer)
-      .info
-      .address
-      .boundAddress
-      .address))
-
-(defn host
-  [server]
-  (-> server bound-address .getHostName))
-
-(defn port
-  [server]
-  (-> server bound-address .getPort))
-
-(defn uri-host
-  [server]
-  (if (instance? java.net.Inet6Address (-> server bound-address .getAddress))
-    (str "[" (host server) "]")
-    (host server)))
-
-(defn uri
-  [server]
-  (str "http://" (uri-host server) ":" (port server)))
+  (let [node (-> (org.elasticsearch.node.NodeBuilder/nodeBuilder)
+                 (.local true)
+                 (.settings (settings config))
+                 .node)]
+    (if (.isTimedOut (health-response node))
+      (throw (IllegalStateException. "Timed out waiting for yellow status from node."))
+      node)))
 
 (defn client
   [server]
