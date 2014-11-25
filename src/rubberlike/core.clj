@@ -2,11 +2,11 @@
   (:import [java.nio.file Paths Files FileVisitResult]))
 
 (defn settings
-  [{:keys [port data-path disable-http?]}]
+  [{:keys [port host data-path disable-http?]}]
   (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
       (.put "http.enabled" (str (not disable-http?)))
       (.put "path.data" (str data-path))
-      (cond-> host              (.put "http.host" (str port)))
+      (cond-> host              (.put "http.host" (str host)))
       (cond-> port              (.put "http.port" (str port)))
       (.build)))
 
@@ -35,6 +35,21 @@
 (defn client
   [server]
   (-> server :node .client))
+
+(defn bound-address
+  [server]
+  (-> server
+      :node
+      .injector
+      (.getInstance org.elasticsearch.http.HttpServer)
+      .info
+      .address
+      .boundAddress
+      .address))
+
+(defn port
+  [server]
+  (-> server bound-address .getPort))
 
 (def delete-recursively-visitor
   (proxy [java.nio.file.SimpleFileVisitor] []
