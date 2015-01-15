@@ -1,14 +1,16 @@
 (ns rubberlike.core
   (:import [java.nio.file Paths Files FileVisitResult]))
 
+(defn stringify-map
+  [m]
+  (zipmap (map name (keys m))
+          (map str (vals m))))
+
 (defn settings
-  [{:keys [port host data-path disable-http?]}]
+  [config]
   (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
-      (.put "http.enabled" (str (not disable-http?)))
-      (.put "path.data" (str data-path))
-      (cond-> host              (.put "http.host" (str host)))
-      (cond-> port              (.put "http.port" (str port)))
-      (.build)))
+      (.put (stringify-map config))
+      .build))
 
 (defn health-response
   [node]
@@ -34,12 +36,12 @@
 
 (defn client
   [server]
-  (-> server :node .client))
+  (-> server ::node .client))
 
 (defn bound-address
   [server]
   (-> server
-      :node
+      ::node
       .injector
       (.getInstance org.elasticsearch.http.HttpServer)
       .info
@@ -67,27 +69,26 @@
   (Files/walkFileTree path delete-recursively-visitor))
 
 (defn data-path
-  [{:keys [data-dir temp-data-dir?] :as config}]
+  [{path :path.data temp-data-dir? :rubberlike/temp-data-dir? :as config}]
   (cond
-   data-dir (Paths/get data-dir (into-array String []))
+   path (Paths/get path (into-array String []))
    temp-data-dir? (Files/createTempDirectory "rubberlike-" (into-array java.nio.file.attribute.FileAttribute []))
-   :else (throw (ex-info "You must supply either data-dir or set temp-data-dir? to true" config))))
+   :else (throw (ex-info "You must supply either path.data or set rubberlike/temp-data-dir? to true" config))))
 
 (def default-config
-  {:disable-http? false
-   :temp-data-dir? true})
+  {:http.enabled true})
 
 (defn create
   ([]
      (create {}))
   ([config]
      (let [config (merge default-config config)
-           config (assoc config :data-path (data-path config))]
-       (assoc config :node (create-node config)))))
+           config (assoc config :path.data (data-path config))]
+       (assoc config ::node (create-node config)))))
 
 (defn stop
-  [{:keys [node data-path temp-data-dir?]}]
-  (.stop node)
-  (when temp-data-dir?
-    (delete-recursively data-path))
+  [config]
+  (.stop (::node config))
+  (when (:rubberlike/temp-data-dir? config)
+    (delete-recursively (:path.data config)))
   :stopped)
