@@ -2,7 +2,7 @@
 
 Rubberlike is a [Clojure](http://clojure.org/) library for creating embedded [Elasticsearch](http://www.elasticsearch.org/) servers. Pretty useful for testing if I may say so myself.
 
-Latest version is `[rubberlike "0.2.0"]`.
+Latest version is `[rubberlike "0.2.1"]`.
 
 Rubberlike requires Java >= 1.7 and quite possibly Elasticsearch >= 1.4.x.
 
