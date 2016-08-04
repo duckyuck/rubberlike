@@ -8,8 +8,9 @@
 
 (defn settings
   [config]
-  (-> (org.elasticsearch.common.settings.ImmutableSettings/settingsBuilder)
+  (-> (org.elasticsearch.common.settings.Settings/settingsBuilder)
       (.put (stringify-map config))
+      (.put {"path.home" "/tmp/v"})
       .build))
 
 (defn health-response
@@ -88,7 +89,7 @@
 
 (defn stop
   [config]
-  (.stop (::node config))
+  (.close (::node config))
   (when (:rubberlike/temp-data-dir? config)
     (delete-recursively (:path.data config)))
   :stopped)
