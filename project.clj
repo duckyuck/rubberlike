@@ -3,6 +3,6 @@
   :url "https://github.com/andersfurseth/rubberlike"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.6.0"]]
   :profiles {:provided {:dependencies [[org.elasticsearch/elasticsearch "2.3.4"]]}}
+  :dependencies [[org.clojure/clojure "1.9.0-alpha16"]]
   :lein-release {:deploy-via :clojars})
