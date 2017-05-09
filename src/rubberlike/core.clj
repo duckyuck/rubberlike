@@ -10,7 +10,6 @@
   [config]
   (-> (org.elasticsearch.common.settings.Settings/settingsBuilder)
       (.put (stringify-map config))
-      (.put {"path.home" "/tmp/v"})
       .build))
 
 (defn health-response
@@ -32,7 +31,7 @@
                  (.settings (settings config))
                  .node)]
     (if (.isTimedOut (health-response node))
-      (throw (IllegalStateException. "Timed out waiting for yellow status from node."))
+      (throw (IllegalStateException. "Timed out waiting for Elasticsearch to start"))
       node)))
 
 (defn client
@@ -47,8 +46,7 @@
       (.getInstance org.elasticsearch.http.HttpServer)
       .info
       .address
-      .boundAddress
-      .address))
+      .publishAddress))
 
 (defn port
   [server]
@@ -69,27 +67,44 @@
 (defn delete-recursively [path]
   (Files/walkFileTree path delete-recursively-visitor))
 
-(defn data-path
-  [{path :path.data temp-data-dir? :rubberlike/temp-data-dir? :as config}]
-  (cond
-   path (Paths/get path (into-array String []))
-   temp-data-dir? (Files/createTempDirectory "rubberlike-" (into-array java.nio.file.attribute.FileAttribute []))
-   :else (throw (ex-info "You must supply either path.data or set rubberlike/temp-data-dir? to true" config))))
+(defn resolve-path [config dir-attr temp-dir?-attr]
+  (let [path (dir-attr config)
+        temp-data-dir? (temp-dir?-attr config)]
+    (cond
+      path (Paths/get path (into-array String []))
+      temp-data-dir? (Files/createTempDirectory (str "rubberlike-elasticsearch-" (name dir-attr))
+                                                (into-array java.nio.file.attribute.FileAttribute []))
+      :else (throw (ex-info (str "You must supply either " dir-attr " or set " temp-dir?-attr " to true") config)))))
 
 (def default-config
   {:http.enabled true})
+
+(defn reify-config [config]
+  (merge config
+         {:path.data (resolve-path config :path.data :rubberlike/temp-data-dir?)
+          :path.home (resolve-path config :path.home :rubberlike/temp-home-dir?)}))
+
+(defn merge-with-defaults [config]
+  (-> (merge default-config config)
+      (cond-> (and (nil? (:path.data config))
+                   (nil? (:rubberlike/temp-data-dir? config)))
+        (assoc :rubberlike/temp-data-dir? true))
+      (cond-> (and (nil? (:path.home config))
+                   (nil? (:rubberlike/temp-home-dir? config)))
+        (assoc :rubberlike/temp-home-dir? true))))
 
 (defn create
   ([]
      (create {}))
   ([config]
-     (let [config (merge default-config config)
-           config (assoc config :path.data (data-path config))]
-       (assoc config ::node (create-node config)))))
+   (let [config (-> config merge-with-defaults reify-config)]
+     (assoc config ::node (create-node config)))))
 
 (defn stop
   [config]
   (.close (::node config))
   (when (:rubberlike/temp-data-dir? config)
     (delete-recursively (:path.data config)))
+  (when (:rubberlike/temp-home-dir? config)
+    (delete-recursively (:path.home config)))
   :stopped)
